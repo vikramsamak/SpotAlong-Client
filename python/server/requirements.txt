@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-socketio[asyncio]
+sqlalchemy[asyncio]
+asyncmy
+python-jose[cryptography]
+passlib[bcrypt]
+httpx
+pydantic
+pydantic-settings
+pyngrok
