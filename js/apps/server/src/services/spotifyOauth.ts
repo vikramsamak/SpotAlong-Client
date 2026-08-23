@@ -15,23 +15,23 @@ export interface SpotifyUserProfile {
 }
 
 export class SpotifyOAuthService {
-  static getAuthorizeUrl(state: string, redirectUri: string): string {
+  static getAuthorizeUrl(state: string): string {
     const params = new URLSearchParams({
       client_id: process.env.SPOTIFY_CLIENT_ID!,
       response_type: 'code',
-      redirect_uri: redirectUri,
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
       scope: 'user-read-playback-state user-modify-playback-state user-read-currently-playing streaming app-remote-control',
       state: state
     });
     return `https://accounts.spotify.com/authorize?${params.toString()}`;
   }
 
-  static async exchangeCode(code: string, redirectUri: string) {
-    const response = await axios.post('https://accounts.spotify.com/api/token',
+  static async exchangeCode(code: string) {
+    const response = await axios.post('https://accounts.spotify.com/api/token', 
       new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: redirectUri,
+        redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
         client_id: process.env.SPOTIFY_CLIENT_ID!,
         client_secret: process.env.SPOTIFY_CLIENT_SECRET!
       }).toString(),
