@@ -2,7 +2,8 @@
 # docker build -f docker/react-client.Dockerfile .
 
 # --- Stage 1: Build ---
-FROM node:20-alpine AS builder
+# node:22 required - pnpm 11 (packageManager field) needs >= 22.13
+FROM node:22-alpine AS builder
 RUN corepack enable
 WORKDIR /usr/src/app
 
