@@ -14,22 +14,40 @@ export const authRouter = Router();
 /**
  * Resolves the Spotify redirect URI for the current request.
  *
- * Priority:
- *  1. APP_BASE_URL env (deterministic override)
- *  2. The host the request actually arrived on (works behind ngrok/nginx
- *     via x-forwarded-host/x-forwarded-proto, requires trust proxy)
+ * Spotify rejects `http://localhost` (HTTPS required except for the
+ * 127.0.0.1 loopback), so derived hosts are normalized to 127.0.0.1.
  *
- * Keeping authorize + token exchange on the same per-request URI is what
- * makes "redirect_uri: Not matching configuration" impossible between the
- * two calls; the URI still has to be registered in the Spotify dashboard.
+ * Priority:
+ *  1. SPOTIFY_LOGIN_REDIRECT_URL env - exact URI, e.g. the SPA callback
+ *     (http://127.0.0.1:5173/auth/callback) so the browser lands back on
+ *     the web app instead of this server's JSON response.
+ *  2. APP_BASE_URL env + /api/login/callback
+ *  3. The host the request arrived on (works behind ngrok/nginx via
+ *     x-forwarded-host/proto; requires trust proxy)
+ *
+ * Whatever URI is used must be registered verbatim in the Spotify dashboard.
  */
 export function resolveRedirectUri(req: Request): string {
-  const configured = process.env.APP_BASE_URL;
-  if (configured) return `${configured.replace(/\/$/, '')}/api/login/callback`;
+  const explicit = process.env.SPOTIFY_LOGIN_REDIRECT_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  const base = process.env.APP_BASE_URL;
+  if (base) return `${normalizeHost(base).replace(/\/$/, '')}/api/login/callback`;
 
   const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0] ?? req.protocol;
-  const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0] ?? req.headers.host;
-  return `${proto}://${host}/api/login/callback`;
+  const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0] ?? req.headers.host ?? 'localhost';
+  return `${proto}://${normalizeHost(host)}/api/login/callback`;
+}
+
+/**
+ * Maps `localhost` hosts/URLs to `127.0.0.1` because Spotify rejects
+ * http://localhost redirect URIs while allowing the loopback IP.
+ */
+function normalizeHost(hostOrUrl: string): string {
+  return hostOrUrl.replace(
+    /^(https?:\/\/)?(www\.)?localhost(?=:|\/|$)/i,
+    (_match, proto?: string, www?: string) => `${proto ?? ''}${www ?? ''}127.0.0.1`
+  );
 }
 
 authRouter.get(
@@ -44,15 +62,23 @@ authRouter.get(
 authRouter.get(
   '/callback',
   asyncHandler(async (req, res) => {
-    const { code, state } = req.query as { code?: string; state?: string };
+    const { code, state, redirect_uri } = req.query as {
+      code?: string;
+      state?: string;
+      redirect_uri?: string;
+    };
     if (!code || !state) {
       res.status(400).json({ detail: 'Missing code or state' });
       return;
     }
-    const loginCode = await handleSpotifyCallback(code, state, resolveRedirectUri(req));
+    // The SPA passes back the exact redirect_uri used during authorize so
+    // the token exchange matches it even when hosts differ.
+    const redirectUri = redirect_uri ?? resolveRedirectUri(req);
+
+    const loginCode = await handleSpotifyCallback(code, state, redirectUri);
     if (!loginCode) {
       res.status(400).json({
-        detail: `Authentication failed. Make sure "${resolveRedirectUri(req)}" is registered in the Spotify developer dashboard redirect URIs.`
+        detail: `Authentication failed. Make sure "${redirectUri}" is registered in the Spotify developer dashboard redirect URIs.`
       });
       return;
     }

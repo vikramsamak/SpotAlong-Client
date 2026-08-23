@@ -4,6 +4,8 @@ import { api } from '../services/api';
 
 type Mode = 'idle' | 'oauth' | 'callback' | 'manual';
 
+const REDIRECT_URI_KEY = 'spotalong.redirect_uri';
+
 export default function LoginScreen() {
   const initializeSession = useSpotAlongStore((s) => s.initializeSession);
   const setAuthError = useSpotAlongStore((s) => s.setAuthError);
@@ -23,9 +25,12 @@ export default function LoginScreen() {
     setMode('callback');
     window.history.replaceState({}, '', window.location.pathname);
 
+    const redirectUri = sessionStorage.getItem(REDIRECT_URI_KEY) ?? undefined;
+    sessionStorage.removeItem(REDIRECT_URI_KEY);
+
     (async () => {
       try {
-        const callback = await api.spotifyCallback(code, state);
+        const callback = await api.spotifyCallback(code, state, redirectUri);
         const redeemed = await api.redeemLoginCode(callback.code);
         initializeSession(redeemed.accessToken, redeemed.refreshToken);
       } catch (error) {
@@ -39,6 +44,7 @@ export default function LoginScreen() {
     setMode('oauth');
     try {
       const login = await api.initiateLogin();
+      sessionStorage.setItem(REDIRECT_URI_KEY, login.redirect_uri);
       window.location.href = login.authUrl;
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Could not start login');
