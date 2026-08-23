@@ -8,12 +8,12 @@ export function getPublicUrl(): string | null {
 }
 
 /**
- * Opens an ngrok tunnel to the local HTTP server.
+ * Opens an ngrok tunnel to the local HTTP server using an
+ * automatically generated ngrok domain.
  *
  * Controlled via env:
  *   NGROK_ENABLED=true        opt-in flag (default false)
  *   NGROK_AUTHTOKEN=...       account authtoken (required unless set in ngrok config)
- *   NGROK_DOMAIN=...          optional reserved static domain
  *
  * Returns the public https URL, or null when disabled/failed.
  * The ngrok native module is only imported when the tunnel is enabled.
@@ -22,15 +22,13 @@ export async function startTunnel(port: number): Promise<string | null> {
   if (process.env.NGROK_ENABLED !== 'true') return null;
 
   const authtoken = process.env.NGROK_AUTHTOKEN;
-  const domain = process.env.NGROK_DOMAIN;
 
   try {
     const ngrok = await import('@ngrok/ngrok');
     listener = await ngrok.forward({
       addr: port,
       proto: 'http',
-      ...(authtoken ? { authtoken } : { authtoken_from_env: true }),
-      ...(domain ? { domain } : {})
+      ...(authtoken ? { authtoken } : { authtoken_from_env: true })
     });
 
     publicUrl = listener.url() ?? null;
