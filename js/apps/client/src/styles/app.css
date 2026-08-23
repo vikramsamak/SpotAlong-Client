@@ -1,0 +1,239 @@
+:root {
+  --background-dark: #121212;
+  --surface-dark: #1c1c1c;
+  --accent-blue: #1db954; /* Spotify green default, dynamically replaced */
+  --text-main: #ffffff;
+  --text-muted: #b3b3b3;
+  --sidebar-width: 60px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background-dark);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-main);
+  user-select: none;
+}
+
+/* Custom Drag Zone for Frameless Window */
+.titlebar-drag {
+  -webkit-app-region: drag;
+  height: 32px;
+  background-color: var(--surface-dark);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.titlebar-button {
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+}
+
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--surface-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+  gap: 12px;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.friend-item {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.friend-item.selected {
+  outline: 2px solid var(--accent-blue);
+}
+
+.friend-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friend-avatar-fallback {
+  background-color: #333;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.status-dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #555;
+}
+
+.status-dot.playing {
+  background-color: var(--accent-blue);
+}
+
+.app-main {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.empty-state {
+  color: var(--text-muted);
+}
+
+.player-card {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-art {
+  width: 240px;
+  height: 240px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.player-song a,
+.player-artists a,
+.player-album a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.player-song a:hover,
+.player-artists a:hover,
+.player-album a:hover {
+  text-decoration: underline;
+}
+
+.player-artists {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.player-artists a:not(:last-child)::after {
+  content: ",";
+}
+
+.player-album {
+  font-size: 13px;
+  margin: 0;
+}
+
+.player-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 320px;
+}
+
+.player-progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #444;
+  overflow: hidden;
+}
+
+.player-progress-fill {
+  height: 100%;
+  background-color: var(--accent-blue);
+}
+
+.listen-button {
+  margin-top: 16px;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--accent-blue);
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.listen-button.active {
+  background-color: #fff;
+}
+
+.login-screen {
+  height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.login-screen input {
+  width: 280px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background-color: var(--surface-dark);
+  color: var(--text-main);
+}
+
+.login-screen button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--accent-blue);
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-screen button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
