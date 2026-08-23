@@ -1,0 +1,25 @@
+# Build context: repository js/ root
+# docker build -f docker/react-client.Dockerfile .
+
+# --- Stage 1: Build ---
+FROM node:20-alpine AS builder
+RUN corepack enable
+WORKDIR /usr/src/app
+
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+COPY packages/ ./packages/
+COPY apps/client/ ./apps/client/
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm exec turbo run build --filter=@spotalong/client
+
+# --- Stage 2: Nginx Static Server ---
+FROM nginx:stable-alpine AS runner
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /usr/src/app/apps/client/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
