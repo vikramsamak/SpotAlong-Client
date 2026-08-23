@@ -6,7 +6,7 @@ FROM node:20-alpine AS builder
 RUN corepack enable
 WORKDIR /usr/src/app
 
-ARG VITE_API_URL=""
+ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./

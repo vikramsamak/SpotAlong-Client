@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile
 
 # Prisma client generation only parses the schema; the URL is never dialed.
 # Pass --build-arg DATABASE_URL=... or the safe default below is used.
-ARG DATABASE_URL="mysql://prisma:prisma@localhost:3306/prisma"
+ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 RUN pnpm --filter @spotalong/server exec prisma generate
 
