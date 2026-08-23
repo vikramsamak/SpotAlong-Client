@@ -17,7 +17,7 @@ export interface LoginInitiation {
   expiryTimestamp: number;
 }
 
-export async function initiateLogin(): Promise<LoginInitiation> {
+export async function initiateLogin(redirectUri: string): Promise<LoginInitiation> {
   const loginCode = generateLoginCode();
   const state = generateLoginCode();
   const expiry = new Date(Date.now() + LOGIN_CODE_TTL_MS);
@@ -34,16 +34,20 @@ export async function initiateLogin(): Promise<LoginInitiation> {
   });
 
   return {
-    authUrl: SpotifyOAuthService.getAuthorizeUrl(state),
+    authUrl: SpotifyOAuthService.getAuthorizeUrl(state, redirectUri),
     expiryTimestamp: expiry.getTime()
   };
 }
 
-export async function handleSpotifyCallback(code: string, state: string): Promise<string | null> {
+export async function handleSpotifyCallback(
+  code: string,
+  state: string,
+  redirectUri: string
+): Promise<string | null> {
   const user = await prisma.user.findFirst({ where: { spotifyState: state } });
   if (!user) return null;
 
-  const tokens = await SpotifyOAuthService.exchangeCode(code);
+  const tokens = await SpotifyOAuthService.exchangeCode(code, redirectUri);
   if (!tokens?.access_token) return null;
 
   const profile = await SpotifyOAuthService.getUserInfo(tokens.access_token);

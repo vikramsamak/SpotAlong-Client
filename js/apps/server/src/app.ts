@@ -11,6 +11,7 @@ import { playerRouter } from './routes/player.js';
 export function createApp(): express.Express {
   const app = express();
 
+  app.set('trust proxy', true);
   app.use(cors());
   app.use(express.json());
 
