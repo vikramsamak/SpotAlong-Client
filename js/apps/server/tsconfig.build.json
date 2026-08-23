@@ -1,0 +1,12 @@
+{
+  "extends": "@spotalong/typescript-config/base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false,
+    "sourceMap": true
+  },
+  "include": ["src"],
+  "exclude": ["tests", "dist", "node_modules"]
+}

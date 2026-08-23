@@ -1,0 +1,7 @@
+# Node.js
+node_modules/
+dist/
+src/generated/
+.env
+.DS_Store
+*.log

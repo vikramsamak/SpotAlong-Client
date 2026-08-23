@@ -1,0 +1,85 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  friendCode          String   @unique @map("friend_code") @db.VarChar(6)
+  displayName         String   @map("display_name")
+  username            String   @unique
+  avatarUrl           String?  @map("avatar_url")
+  
+  // SpotAlong Session Tokens (JWT)
+  accessToken         String?  @map("access_token") @db.Text
+  refreshToken        String?  @map("refresh_token") @db.Text
+  tokenExpiry         DateTime? @map("token_expiry")
+
+  // Spotify Auth Tokens
+  spotifyAccessToken  String?  @map("spotify_access_token") @db.Text
+  spotifyRefreshToken String?  @map("spotify_refresh_token") @db.Text
+  spotifyTokenExpiry  DateTime? @map("spotify_token_expiry")
+
+  // Login Staging (OAuth State)
+  spotifyState        String?  @map("spotify_state")
+  loginCode           String?  @map("login_code") @db.VarChar(6)
+  loginCodeExpiry     DateTime? @map("login_code_expiry")
+
+  // Live Playback Cache
+  lastOnline          DateTime? @map("last_online")
+  lastSongId          String?  @map("last_song_id")
+  lastProgress        Int?     @map("last_progress")
+  lastIsPlaying       Boolean? @map("last_is_playing")
+
+  // Privacy Settings
+  privacyMode         String   @default("friends") @map("privacy_mode")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  friends             Friend[] @relation("UserFriends")
+  targetedFriends     Friend[] @relation("FriendTargets")
+
+  @@map("users")
+}
+
+model Friend {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  friendId  String   @map("friend_id")
+  direction String   // "sent" | "received"
+  status    String   // "pending" | "accepted" | "declined"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendTargets", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@map("friends")
+}
+
+model ListenSession {
+  id         String   @id @default(uuid())
+  listenerId String   @map("listener_id")
+  targetId   String   @map("target_id")
+  active     Boolean  @default(true)
+  state      String?  @db.Text
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([listenerId, targetId])
+  @@map("listen_sessions")
+}
+
+model CacheEntry {
+  key       String   @id
+  value     String   @db.Text // Store JSON objects or raw assets
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("cache_entries")
+}
