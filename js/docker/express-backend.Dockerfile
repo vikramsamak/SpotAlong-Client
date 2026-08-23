@@ -16,7 +16,9 @@ RUN pnpm install --frozen-lockfile
 # Pass --build-arg DATABASE_URL=... or the safe default below is used.
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
+
 RUN pnpm --filter @spotalong/server exec prisma generate
+RUN pnpm --filter @spotalong/server exec prisma migrate deploy
 
 RUN pnpm exec turbo run build --filter=@spotalong/server
 
