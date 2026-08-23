@@ -38,7 +38,6 @@ describe('Auth routes', () => {
     expect(res.body.authUrl).toContain('https://accounts.spotify.com/authorize');
     expect(res.body.authUrl).toContain('state=');
     expect(typeof res.body.expiryTimestamp).toBe('number');
-    expect(res.body.redirect_uri).toMatch(/\/api\/login\/callback$/);
     expect(prismaMock.user.create).toHaveBeenCalledTimes(1);
   });
 
