@@ -1,0 +1,17 @@
+# Dependencies / build outputs are created inside the image
+**/node_modules
+**/dist
+**/src/generated
+.turbo
+**/.turbo
+
+# Secrets never belong in the context or image layers
+**/.env
+**/.env.local
+**/*.pem
+
+# VCS / tooling noise
+.git
+.gitignore
+*.log
+.DS_Store
