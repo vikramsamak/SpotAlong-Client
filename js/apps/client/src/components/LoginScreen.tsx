@@ -1,8 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSpotAlongStore } from '../store/useSpotAlongStore';
 import { api } from '../services/api';
 
-type Mode = 'idle' | 'oauth' | 'callback' | 'manual';
+type Mode = 'idle' | 'oauth' | 'callback';
 
 export default function LoginScreen() {
   const initializeSession = useSpotAlongStore((s) => s.initializeSession);
@@ -10,24 +10,24 @@ export default function LoginScreen() {
   const authError = useSpotAlongStore((s) => s.authError);
 
   const [mode, setMode] = useState<Mode>('idle');
-  const [manualCode, setManualCode] = useState('');
-  const [manualToken, setManualToken] = useState('');
+  const exchangedRef = useRef(false);
 
-  // Handle OAuth redirect back from Spotify (?code=...&state=...)
+  // Handle the OAuth redirect back from Spotify (?code=...&state=...).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
     if (!code || !state) return;
 
-    setMode('callback');
     window.history.replaceState({}, '', window.location.pathname);
+    if (exchangedRef.current) return;
+    exchangedRef.current = true;
 
+    setMode('callback');
     (async () => {
       try {
-        const callback = await api.spotifyCallback(code, state);
-        const redeemed = await api.redeemLoginCode(callback.code);
-        initializeSession(redeemed.accessToken, redeemed.refreshToken);
+        const result = await api.spotifyCallback(code, state);
+        initializeSession(result.accessToken, result.refreshToken);
       } catch (error) {
         setAuthError(error instanceof Error ? error.message : 'Login failed');
         setMode('idle');
@@ -43,24 +43,6 @@ export default function LoginScreen() {
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Could not start login');
       setMode('idle');
-    }
-  };
-
-  const redeemManual = async (e: FormEvent) => {
-    e.preventDefault();
-    const value = manualCode.trim() || manualToken.trim();
-    if (!value) return;
-    setMode('callback');
-    try {
-      if (manualToken.trim()) {
-        initializeSession(manualToken.trim());
-        return;
-      }
-      const redeemed = await api.redeemLoginCode(value);
-      initializeSession(redeemed.accessToken, redeemed.refreshToken);
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Invalid code');
-      setMode('manual');
     }
   };
 
@@ -82,35 +64,6 @@ export default function LoginScreen() {
       <button className="login-primary" onClick={startOAuth} disabled={mode === 'oauth'}>
         {mode === 'oauth' ? 'Redirecting...' : 'Sign in with Spotify'}
       </button>
-
-      <button
-        type="button"
-        className="login-secondary"
-        onClick={() => setMode(mode === 'manual' ? 'idle' : 'manual')}
-      >
-        Enter code manually
-      </button>
-
-      {mode === 'manual' && (
-        <form onSubmit={redeemManual} className="login-manual">
-          <input
-            value={manualCode}
-            onChange={(e) => setManualCode(e.target.value)}
-            placeholder="6-digit login code"
-            maxLength={6}
-            inputMode="numeric"
-          />
-          <input
-            type="password"
-            value={manualToken}
-            onChange={(e) => setManualToken(e.target.value)}
-            placeholder="...or paste an access token"
-          />
-          <button type="submit" disabled={!manualCode.trim() && !manualToken.trim()}>
-            Connect
-          </button>
-        </form>
-      )}
     </div>
   );
 }

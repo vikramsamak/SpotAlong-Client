@@ -52,14 +52,10 @@ export const api = {
     return request<LoginInitiation>('/api/login');
   },
 
-  async spotifyCallback(code: string, state: string): Promise<{ message: string; code: string }> {
-    return request<{ message: string; code: string }>(
+  async spotifyCallback(code: string, state: string): Promise<RedeemResult> {
+    return request<RedeemResult>(
       `/api/login/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
     );
-  },
-
-  async redeemLoginCode(loginCode: string): Promise<RedeemResult> {
-    return request<RedeemResult>(`/api/login/redeem_code?code=${encodeURIComponent(loginCode)}`);
   },
 
   async checkEligible(): Promise<boolean> {

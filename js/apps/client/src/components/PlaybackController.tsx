@@ -17,8 +17,6 @@ import { playerApi, PlayerAction } from '../services/playerApi';
 import DeviceList from './DeviceList';
 import Tooltip from './Tooltip';
 
-const COOKIE_KEY = 'spotalong.sp_t_cookie';
-
 function formatTime(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -30,7 +28,6 @@ export default function PlaybackController() {
   const stopPlayerSession = useSpotAlongStore((s) => s.stopPlayerSession);
   const setDevicesOpen = useSpotAlongStore((s) => s.setDevicesOpen);
 
-  const [cookie, setCookie] = useState<string>(() => localStorage.getItem(COOKIE_KEY) ?? '');
   const [connecting, setConnecting] = useState(false);
   const [seekValue, setSeekValue] = useState(0);
 
@@ -68,9 +65,7 @@ export default function PlaybackController() {
   const connect = async () => {
     setConnecting(true);
     try {
-      const trimmed = cookie.trim();
-      localStorage.setItem(COOKIE_KEY, trimmed);
-      await startPlayerSession(trimmed);
+      await startPlayerSession();
     } catch {
       // snackbar is shown by the action
     } finally {
@@ -90,17 +85,10 @@ export default function PlaybackController() {
         <div className="connect-player">
           <p className="connect-title">Connect your Spotify player</p>
           <p className="connect-hint">
-            Paste your <code>sp_t</code> cookie so the SpotAlong server can control playback.
+            SpotAlong reads your sp_t cookie from Chrome so it can control your playback.
           </p>
           <div className="connect-row">
-            <input
-              type="password"
-              value={cookie}
-              onChange={(e) => setCookie(e.target.value)}
-              placeholder="sp_t cookie"
-              autoComplete="off"
-            />
-            <button onClick={connect} disabled={connecting || !cookie.trim()}>
+            <button onClick={connect} disabled={connecting}>
               {connecting ? 'Connecting…' : 'Connect'}
             </button>
           </div>

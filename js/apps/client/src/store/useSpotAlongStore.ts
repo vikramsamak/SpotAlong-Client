@@ -73,7 +73,7 @@ interface SpotAlongState {
   setDevicesOpen: (open: boolean) => void;
   setListeners: (listeners: string[]) => void;
   showSnackbar: (text: string, kind?: SnackbarMessage['kind']) => void;
-  startPlayerSession: (spTCookie: string) => Promise<void>;
+  startPlayerSession: (spTCookie?: string) => Promise<void>;
   stopPlayerSession: () => Promise<void>;
   refreshDevices: () => Promise<void>;
   sendNextForListening: (trackUri: string) => void;

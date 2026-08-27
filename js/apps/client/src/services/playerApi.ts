@@ -53,10 +53,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const playerApi = {
-  async start(spTCookie: string): Promise<PlayerSessionInfo> {
+  async start(spTCookie?: string): Promise<PlayerSessionInfo> {
     return request<PlayerSessionInfo>('/start', {
       method: 'POST',
-      body: JSON.stringify({ cookie: spTCookie })
+      body: JSON.stringify(spTCookie ? { cookie: spTCookie } : {})
     });
   },
 

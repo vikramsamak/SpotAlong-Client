@@ -4,6 +4,7 @@ import { getUserIdFromAuthHeader } from '../services/authService.js';
 import { getListenersOf } from '../services/listenService.js';
 import { playerSessions } from '../services/player/PlayerSessionManager.js';
 import { SpotifyPlayerEngine } from '../services/player/SpotifyPlayerEngine.js';
+import { describeCookieScanFailure, getSpotifySPTCookie } from '../services/player/cookieScanner.js';
 import { emitToUser } from '../socketio/emitter.js';
 
 let broadcasterAttached = false;
@@ -64,11 +65,20 @@ playerRouter.use(
 playerRouter.post(
   '/start',
   asyncHandler(async (req, res) => {
-    const userId = await getUserIdFromAuthHeader(req.headers.authorization);
+      const userId = await getUserIdFromAuthHeader(req.headers.authorization);
     const { cookie } = (req.body ?? {}) as { cookie?: string };
-    if (!cookie) throw new ApiError(400, 'Missing sp_t cookie');
+    let spTCookie = cookie;
+
+    if (!spTCookie) {
+      const scanned = await getSpotifySPTCookie();
+      if (!scanned.spTCookie) {
+        throw new ApiError(400, describeCookieScanFailure(scanned.reason));
+      }
+      spTCookie = scanned.spTCookie;
+    }
+
     try {
-      const state = await playerSessions.start(userId, cookie);
+      const state = await playerSessions.start(userId, spTCookie);
       res.json({ active: true, deviceId: undefined, state });
     } catch (error) {
       console.error(`Failed to start player session for ${userId}:`, error);

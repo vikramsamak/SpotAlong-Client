@@ -26,12 +26,12 @@ authRouter.get(
       res.status(400).json({ detail: 'Missing code or state' });
       return;
     }
-    const loginCode = await handleSpotifyCallback(code, state);
-    if (!loginCode) {
+    const result = await handleSpotifyCallback(code, state);
+    if (!result) {
       res.status(400).json({ detail: 'Authentication failed' });
       return;
     }
-    res.json({ message: 'Authenticated', code: loginCode });
+    res.json(result);
   })
 );
 

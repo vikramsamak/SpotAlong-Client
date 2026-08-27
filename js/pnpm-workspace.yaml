@@ -6,6 +6,10 @@ allowBuilds:
   '@prisma/engines': true
   prisma: true
   esbuild: true
+  keytar: false
+  sqlite3: true
+  tldjs: false
+  win-dpapi: true
 
 # Install/network tuning (pnpm 11: non-auth settings live here, not .npmrc).
 # Helps `pnpm install --frozen-lockfile` finish under slow/constrained CI & Docker

@@ -39,7 +39,29 @@ export async function initiateLogin(): Promise<LoginInitiation> {
   };
 }
 
-export async function handleSpotifyCallback(code: string, state: string): Promise<string | null> {
+async function mintSession(userId: string): Promise<RedeemResult> {
+  const access = createAccessToken(userId);
+  const refresh = createRefreshToken(userId);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      accessToken: access.token,
+      refreshToken: refresh.token,
+      tokenExpiry: access.expiry,
+      loginCode: null,
+      loginCodeExpiry: null
+    }
+  });
+
+  return {
+    accessToken: access.token,
+    refreshToken: refresh.token,
+    timeout: access.expiry.getTime()
+  };
+}
+
+export async function handleSpotifyCallback(code: string, state: string): Promise<RedeemResult | null> {
   const user = await prisma.user.findFirst({ where: { spotifyState: state } });
   if (!user) return null;
 
@@ -61,7 +83,7 @@ export async function handleSpotifyCallback(code: string, state: string): Promis
     }
   });
 
-  return user.loginCode;
+  return mintSession(user.id);
 }
 
 export interface RedeemResult {
@@ -77,25 +99,7 @@ export async function redeemLoginCode(loginCode: string): Promise<RedeemResult |
   }
   if (!user.spotifyAccessToken) return null;
 
-  const access = createAccessToken(user.id);
-  const refresh = createRefreshToken(user.id);
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      accessToken: access.token,
-      refreshToken: refresh.token,
-      tokenExpiry: access.expiry,
-      loginCode: null,
-      loginCodeExpiry: null
-    }
-  });
-
-  return {
-    accessToken: access.token,
-    refreshToken: refresh.token,
-    timeout: access.expiry.getTime()
-  };
+  return mintSession(user.id);
 }
 
 export interface RefreshResult {
