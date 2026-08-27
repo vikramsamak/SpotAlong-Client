@@ -105,6 +105,18 @@ function registerEventHandlers(socket: Socket, namespace: AuthNamespace, userId:
     }
   });
 
+  socket.on('upload_precache', async (data) => {
+    const activeSessions = await prisma.listenSession.findMany({
+      where: { targetId: userId, active: true },
+      select: { listenerId: true }
+    });
+    for (const session of activeSessions) {
+      namespace
+        .to(`user:${session.listenerId}`)
+        .emit('precache', { userId, trackUri: data.trackUri });
+    }
+  });
+
   socket.on('start_listening', async (targetId: string) => {
     try {
       await assertFriendship(userId, targetId);

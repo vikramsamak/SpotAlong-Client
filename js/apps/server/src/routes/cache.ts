@@ -65,7 +65,20 @@ cacheRouter.get(
 
 cacheRouter.post(
   '/precache',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const { key, value, expiresInMs } = (req.body ?? {}) as {
+      key?: string;
+      value?: unknown;
+      expiresInMs?: number;
+    };
+    if (key && value !== undefined) {
+      const expiresAt = new Date(Date.now() + (expiresInMs ?? 24 * 60 * 60 * 1000));
+      await prisma.cacheEntry.upsert({
+        where: { key },
+        update: { value: typeof value === 'string' ? value : JSON.stringify(value), expiresAt },
+        create: { key, value: typeof value === 'string' ? value : JSON.stringify(value), expiresAt }
+      });
+    }
     res.json({ success: true });
   })
 );

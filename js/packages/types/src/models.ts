@@ -53,4 +53,11 @@ export interface PlayerStateSnapshot {
   durationMs: number;
   trackUri?: string;
   positionSec: number;
+  track?: {
+    name: string;
+    album: string;
+    artists: Array<{ name: string; url: string }>;
+    albumImage?: string;
+    uri?: string;
+  };
 }

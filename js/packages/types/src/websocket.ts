@@ -22,10 +22,14 @@ export interface ServerToClientEvents {
   }) => void;
   player_state: (payload: { userId: string; state: PlayerStateSnapshot }) => void;
   player_stopped: (payload: { userId: string }) => void;
+  /** Notify active listeners to pre-fetch the host's next queued track */
+  precache: (payload: { userId: string; trackUri: string }) => void;
 }
 
 export interface ClientToServerEvents {
   send_current_state: (state: { songId: string; progress: number; isPlaying: boolean; looping: string }) => void;
   start_listening: (targetId: string) => void;
   end_listening: (targetId: string) => void;
+  /** Broadcast your queue head so listeners can pre-fetch */
+  upload_precache: (payload: { trackUri: string }) => void;
 }

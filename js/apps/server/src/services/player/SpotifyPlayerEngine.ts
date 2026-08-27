@@ -37,6 +37,23 @@ export interface EngineState {
   durationMs: number;
   trackUri?: string;
   queueRevision?: number;
+  /** Track metadata extracted from the cluster update (title, album, artists, art) */
+  track?: {
+    name: string;
+    album: string;
+    artists: Array<{ name: string; url: string }>;
+    albumImage?: string;
+    songLink?: string;
+    uri?: string;
+  };
+}
+
+export interface EngineDevice {
+  id: string;
+  name: string;
+  type?: string;
+  isActive: boolean;
+  volume?: number;
 }
 
 function randomString(length: number): string {
@@ -57,6 +74,7 @@ export class SpotifyPlayerEngine {
   private accessTokenExpirySec = 0;
   private connectionId: string | null = null;
   private queueRevision?: number;
+  private devices: Record<string, { name?: string; type?: string; volume?: number }> = {};
 
   private initialized = false;
   private forceDisconnect = false;
@@ -119,6 +137,16 @@ export class SpotifyPlayerEngine {
       positionSec: Math.floor(this.getPositionSec()),
       durationMs: this.state.durationMs
     };
+  }
+
+  getDevices(): EngineDevice[] {
+    return Object.entries(this.devices).map(([id, device]) => ({
+      id,
+      name: device.name ?? id,
+      type: device.type,
+      volume: device.volume,
+      isActive: id === this.state.activeDeviceId
+    }));
   }
 
   private async authorize(): Promise<void> {
@@ -235,6 +263,7 @@ export class SpotifyPlayerEngine {
 
     const activeDevice = cluster.active_device_id ?? '';
     this.state.activeDeviceId = activeDevice;
+    this.devices = cluster.devices ?? {};
     if (activeDevice && cluster.devices?.[activeDevice]) {
       this.state.volume = cluster.devices[activeDevice].volume ?? 0;
     }
@@ -253,7 +282,33 @@ export class SpotifyPlayerEngine {
     this.state.trackUri = playerState.track?.uri;
     this.state.positionMs = this.lastPositionMs;
 
+    this.state.track = this.extractTrack(playerState);
+
     this.onStateChange?.(this.getSnapshot());
+  }
+
+  private extractTrack(
+    playerState: ClusterPlayerState
+  ): EngineState['track'] | undefined {
+    const metadata = playerState.track?.metadata;
+    if (!metadata) return undefined;
+    const uri = playerState.track?.uri;
+    const name = String(metadata.title ?? metadata.name ?? '');
+    const album = String(metadata.album_title ?? metadata.album_name ?? '');
+    if (!name && !uri) return undefined;
+    const albumImage =
+      String(metadata.image_xlarge_url ?? metadata.image_url ?? '') || undefined;
+    return {
+      name: name || uri || '',
+      album,
+      artists: Array.isArray(metadata.artist_name)
+        ? (metadata.artist_name as string[]).map((n) => ({ name: String(n), url: '' }))
+        : metadata.artist_name
+          ? [{ name: String(metadata.artist_name), url: '' }]
+          : [],
+      albumImage,
+      uri
+    };
   }
 
   private async registerDevice(): Promise<void> {
@@ -382,6 +437,18 @@ export class SpotifyPlayerEngine {
         { headers: this.authedHeaders() }
       )
     );
+  }
+
+  async setVolume(percent: number): Promise<void> {
+    await this.ensureReady();
+    const deviceId = this.state.activeDeviceId;
+    const params = new URLSearchParams({
+      volume_percent: String(Math.max(0, Math.min(100, Math.round(percent))))
+    });
+    const url = `https://api.spotify.com/v1/me/player/volume?${params.toString()}${deviceId ? `&device_id=${encodeURIComponent(deviceId)}` : ''}`;
+    const response = await this.http.put(url, null, { headers: this.authedHeaders() });
+    if (response.status !== 204) throw new Error(`Volume command failed (${response.status})`);
+    this.state.volume = Math.round(percent * 655.35);
   }
 
   static pause(): Record<string, unknown> {
@@ -527,7 +594,7 @@ export class SpotifyPlayerEngine {
 
 interface ClusterStateCluster {
   active_device_id?: string;
-  devices?: Record<string, { volume?: number }>;
+  devices?: Record<string, { name?: string; type?: string; volume?: number }>;
   player_state?: ClusterPlayerState;
   update_reason?: string;
 }

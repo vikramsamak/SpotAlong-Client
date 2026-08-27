@@ -46,7 +46,8 @@ interface CommandBody {
     | 'queue'
     | 'shuffle'
     | 'repeat'
-    | 'transfer';
+    | 'transfer'
+    | 'volume';
   value?: unknown;
 }
 
@@ -98,6 +99,19 @@ playerRouter.get(
   })
 );
 
+playerRouter.get(
+  '/devices',
+  asyncHandler(async (req, res) => {
+    const userId = await getUserIdFromAuthHeader(req.headers.authorization);
+    const engine = playerSessions.get(userId);
+    if (!engine) {
+      res.json({ active: false, devices: [] });
+      return;
+    }
+    res.json({ active: true, devices: engine.getDevices() });
+  })
+);
+
 playerRouter.post(
   '/command',
   asyncHandler(async (req, res) => {
@@ -142,6 +156,10 @@ playerRouter.post(
       case 'transfer':
         if (typeof value !== 'string') throw new ApiError(400, 'transfer requires a device id');
         await engine.transfer(value);
+        break;
+      case 'volume':
+        if (typeof value !== 'number') throw new ApiError(400, 'volume requires a percent value');
+        await engine.setVolume(value);
         break;
       default:
         throw new ApiError(400, 'Unknown player action');
