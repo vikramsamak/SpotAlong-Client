@@ -6,3 +6,12 @@ allowBuilds:
   '@prisma/engines': true
   prisma: true
   esbuild: true
+
+# Install/network tuning (pnpm 11: non-auth settings live here, not .npmrc).
+# Helps `pnpm install --frozen-lockfile` finish under slow/constrained CI & Docker
+# build timeouts by reusing the store and allowing long, retried fetches.
+preferOffline: true
+networkConcurrency: 16
+fetchRetries: 6
+fetchTimeout: 300000
+childConcurrency: 4

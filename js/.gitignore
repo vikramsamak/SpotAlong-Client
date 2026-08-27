@@ -5,3 +5,4 @@ node_modules/
 *.log
 dist/
 .pnpm-debug.log
+docs/deploy-logs/

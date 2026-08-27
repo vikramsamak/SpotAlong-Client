@@ -1,5 +1,5 @@
 # Build context: repository js/ root
-# docker build -f docker/react-client.Dockerfile .
+# docker build -f docker/client.Dockerfile .
 
 # --- Stage 1: Build ---
 # node:22 required - pnpm 11 (packageManager field) needs >= 22.13
