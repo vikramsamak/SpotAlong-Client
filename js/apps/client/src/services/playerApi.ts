@@ -2,9 +2,18 @@ import type { PlayerStateSnapshot } from '@spotalong/types';
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? '';
 
+export interface PlayerDevice {
+  id: string;
+  name: string;
+  type?: string;
+  isActive: boolean;
+  volume?: number;
+}
+
 export interface PlayerSessionInfo {
   active: boolean;
   state?: PlayerStateSnapshot;
+  devices?: PlayerDevice[];
 }
 
 export type PlayerAction =
@@ -17,7 +26,8 @@ export type PlayerAction =
   | 'queue'
   | 'shuffle'
   | 'repeat'
-  | 'transfer';
+  | 'transfer'
+  | 'volume';
 
 let authToken: string | null = null;
 
@@ -56,6 +66,10 @@ export const playerApi = {
 
   async state(): Promise<PlayerSessionInfo> {
     return request<PlayerSessionInfo>('/state');
+  },
+
+  async devices(): Promise<PlayerSessionInfo> {
+    return request<PlayerSessionInfo>('/devices');
   },
 
   async command(action: PlayerAction, value?: unknown): Promise<PlayerSessionInfo & { success: boolean }> {
