@@ -19,7 +19,11 @@ RUN pnpm exec turbo run build --filter=@spotalong/client
 
 # --- Stage 2: Nginx Static Server ---
 FROM nginx:stable-alpine AS runner
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# BACKEND_URL is filled into default.conf.template at startup (nginx image auto
+# processes /etc/nginx/templates/*.template). Overridable via Coolify env var.
+ARG BACKEND_URL=https://spotalong-api.vikramsamak.com
+ENV BACKEND_URL=$BACKEND_URL
+COPY docker/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=builder /usr/src/app/apps/client/dist /usr/share/nginx/html
 
 EXPOSE 80

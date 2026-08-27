@@ -1,10 +1,20 @@
-upstream backend {
-    server backend:3000;
-}
+# Reverse proxy for the SpotAlong REST API, Socket.IO and health check.
+#
+# The backend (Express/Prisma server) is a SEPARATE Coolify resource, so it is
+# reached by public URL rather than a compose service name. The URL is injected
+# at container startup via the BACKEND_URL env var (nginx image auto-substitutes
+# /etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf).
+#
+# proxy_pass uses a variable + resolver so nginx resolves BACKEND_URL at request
+# time and does NOT fail to boot if the host is briefly unresolvable.
+
+resolver 127.0.0.11 valid=10s;
 
 server {
     listen 80;
     server_name _;
+
+    set $backend "${BACKEND_URL}";
 
     root /usr/share/nginx/html;
     index index.html;
@@ -16,7 +26,7 @@ server {
 
     # REST API
     location /api/ {
-        proxy_pass http://backend;
+        proxy_pass $backend;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -26,7 +36,7 @@ server {
 
     # Socket.IO (websocket upgrade)
     location /socket.io/ {
-        proxy_pass http://backend;
+        proxy_pass $backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -35,8 +45,8 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    location /health {
-        proxy_pass http://backend;
+    location = /health {
+        proxy_pass $backend;
     }
 
     # Vite emits content-hashed filenames, safe to cache forever
